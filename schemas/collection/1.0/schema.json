@@ -449,7 +449,8 @@
         "CuriosityQuestionSet",
         "MarkingSchemeRubric",
         "ExplanationResource",
-        "ExperientialResource"
+        "ExperientialResource",
+        "CoachingSession"
       ]
     },
     "resourceType": {
