@@ -16,6 +16,10 @@ PATCH   /license/v3/update/:identifier          controllers.v3.LicenseController
 DELETE  /license/v3/retire/:identifier          controllers.v3.LicenseController.retire(identifier: String)
 
 
+POST       /content/v3/session/add         controllers.v3.SessionController.add
+DELETE      /content/v3/session/remove      controllers.v3.SessionController.remove
+PATCH       /content/v3/session/update/:identifier      controllers.v3.SessionController.update(identifier: String)
+
 #Devcon-School
 POST    /teacher/v3/create                    controllers.v3.TeacherController.create
 GET     /teacher/v3/read/:identifier          controllers.v3.TeacherController.read(identifier: String)
