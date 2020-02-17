@@ -15,3 +15,13 @@ GET     /license/v3/read/:identifier            controllers.v3.LicenseController
 PATCH   /license/v3/update/:identifier          controllers.v3.LicenseController.update(identifier: String)
 DELETE  /license/v3/retire/:identifier          controllers.v3.LicenseController.retire(identifier: String)
 
+
+#Devcon-School
+POST    /teacher/v3/create                    controllers.v3.TeacherController.create
+GET     /teacher/v3/read/:identifier          controllers.v3.TeacherController.read(identifier: String)
+POST    /period/v3/create                     controllers.v3.PeriodController.create
+GET     /period/v3/read/:identifier           controllers.v3.PeriodController.read(identifier: String)
+
+
+
+

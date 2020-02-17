@@ -1,0 +1,21 @@
+{
+    "$id": "period-schema.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Period",
+    "type": "object",
+    "properties": {
+        "identifier": {
+            "type": "string"
+        },
+        "session": {
+            "type": "string",
+            "minLength": 8
+        },
+        "subject": {
+            "type": "string"
+        },
+        "textbookId": {
+            "type": "string"
+        }
+    }
+}

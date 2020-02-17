@@ -1,0 +1,13 @@
+{
+    "objectType": "Teacher",
+    "version": "disable",
+    "versionCheckMode": "OFF",
+    "frameworkCategories": [],
+    "relations": {
+        "periods": {
+            "type": "associatedTo",
+            "direction": "out",
+            "objects": ["Period"]
+        }
+    }
+}

@@ -23,7 +23,11 @@ object NodeUtil {
         val jsonProps = DefinitionNode.fetchJsonProps(node.getGraphId, schemaVersion, schemaName)
         val updatedMetadataMap:util.Map[String, AnyRef] = metadataMap.entrySet().asScala.filter(entry => null != entry.getValue).map((entry: util.Map.Entry[String, AnyRef]) => handleKeyNames(entry, fields) ->  convertJsonProperties(entry, jsonProps)).toMap.asJava
         val definitionMap = DefinitionNode.getRelationDefinitionMap(node.getGraphId, schemaVersion, schemaName).asJava
-        val relMap:util.Map[String, util.List[util.Map[String, AnyRef]]] = getRelationMap(node, updatedMetadataMap, definitionMap)
+        var relMap:util.Map[String, util.List[util.Map[String, AnyRef]]] = getRelationMap(node, updatedMetadataMap, definitionMap, false)
+        if(schemaName.contentEquals("teacher")){
+            relMap = getRelationMap(node, updatedMetadataMap, definitionMap, true)
+        }
+
         var finalMetadata = new util.HashMap[String, AnyRef]()
         finalMetadata.put("objectType",node.getObjectType)
         finalMetadata.putAll(updatedMetadataMap)
@@ -105,7 +109,7 @@ object NodeUtil {
         }
     }
 
-    def getRelationMap(node: Node, updatedMetadataMap: util.Map[String, AnyRef], relationMap: util.Map[String, AnyRef]):util.Map[String, util.List[util.Map[String, AnyRef]]] = {
+    def getRelationMap(node: Node, updatedMetadataMap: util.Map[String, AnyRef], relationMap: util.Map[String, AnyRef], isTeacher: Boolean):util.Map[String, util.List[util.Map[String, AnyRef]]] = {
         val inRelations:util.List[Relation] = { if (CollectionUtils.isEmpty(node.getInRelations)) new util.ArrayList[Relation] else node.getInRelations }
         val outRelations:util.List[Relation] = { if (CollectionUtils.isEmpty(node.getOutRelations)) new util.ArrayList[Relation] else node.getOutRelations }
         val relMap = new util.HashMap[String, util.List[util.Map[String, AnyRef]]]
@@ -114,7 +118,7 @@ object NodeUtil {
             if (relMap.containsKey(relationMap.get(relKey))) relMap.get(relationMap.get(relKey)).add(populateRelationMaps(rel, "in"))
             else {
                 if(null != relationMap.get(relKey)) {
-                    relMap.put(relationMap.get(relKey).asInstanceOf[String], new util.ArrayList[util.Map[String, AnyRef]]() {add(populateRelationMaps(rel, "in"))})
+                    relMap.put(relationMap.get(relKey).asInstanceOf[String], new util.ArrayList[util.Map[String, AnyRef]]() {add(if(!isTeacher)populateRelationMaps(rel, "in") else populateRelationPeriodMaps(rel, "in"))})
                 }
             }
         }
@@ -123,7 +127,7 @@ object NodeUtil {
             if (relMap.containsKey(relationMap.get(relKey))) relMap.get(relationMap.get(relKey)).add(populateRelationMaps(rel, "out"))
             else {
                 if(null != relationMap.get(relKey)) {
-                    relMap.put(relationMap.get(relKey).asInstanceOf[String], new util.ArrayList[util.Map[String, AnyRef]]() {add(populateRelationMaps(rel, "out"))})
+                    relMap.put(relationMap.get(relKey).asInstanceOf[String], new util.ArrayList[util.Map[String, AnyRef]]() {add(if(!isTeacher)populateRelationMaps(rel, "out") else populateRelationPeriodMaps(rel, "out"))})
                 }
             }
         }
@@ -156,6 +160,25 @@ object NodeUtil {
                 put("relation", rel.getRelationType)
                 put("description", rel.getStartNodeMetadata.get("description"))
                 put("status", rel.getStartNodeMetadata.get("status"))
+            }}
+    }
+
+    def populateRelationPeriodMaps(rel: Relation, direction: String): util.Map[String, AnyRef] = {
+        if("out".equalsIgnoreCase(direction))
+            new util.HashMap[String, Object]() {{
+                put("identifier", rel.getEndNodeId.replace(".img", ""))
+                put("name", rel.getEndNodeName)
+                put("objectType", rel.getEndNodeObjectType.replace("Image", ""))
+                put("relation", rel.getRelationType)
+                putAll(rel.getEndNodeMetadata)
+            }}
+        else
+            new util.HashMap[String, Object]() {{
+                put("identifier", rel.getStartNodeId.replace(".img", ""))
+                put("name", rel.getStartNodeName)
+                put("objectType", rel.getStartNodeObjectType.replace("Image", ""))
+                put("relation", rel.getRelationType)
+                putAll(rel.getStartNodeMetadata)
             }}
     }
 

@@ -1,0 +1,18 @@
+{
+    "$id": "teacher-schema.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Teacher",
+    "type": "object",
+    "properties": {
+        "identifier": {
+            "type": "string"
+        },
+        "name": {
+            "type": "string",
+            "minLength": 5
+        },
+        "subject": {
+            "type": "string"
+        }
+    }
+}

@@ -11,6 +11,7 @@ import org.sunbird.common.dto.ResponseHandler;
 import org.sunbird.common.exception.ClientException;
 import org.sunbird.graph.dac.model.Node;
 import org.sunbird.graph.nodes.DataNode;
+import org.sunbird.graph.schema.DefinitionNode;
 import org.sunbird.graph.utils.NodeUtil;
 import org.sunbird.utils.RequestUtils;
 import scala.concurrent.Future;
@@ -31,6 +32,8 @@ public class ContentActor extends BaseActor {
             case "createContent": return create(request);
             case "readContent": return read(request);
             case "updateContent": return update(request);
+            case "createTeacher": return createTeacher(request);
+            case "readTeacher": return readTeacher(request);
             default: return ERROR(operation);
         }
     }
@@ -180,4 +183,42 @@ public class ContentActor extends BaseActor {
         }
         return list;
     }
+
+
+    /**
+     * Devcon-2020 start
+     */
+
+    private Future<Response> readTeacher(Request request) throws Exception {
+        return DataNode.read(request, getContext().dispatcher())
+                .map(new Mapper<Node, Response>() {
+                    @Override
+                    public Response apply(Node node) {
+                        // Added for backward compatibility in mobile
+                        Map<String, Object> metadata = NodeUtil.serialize(node, new ArrayList<String>(), (String) request.getContext().get("schemaName"), (String)request.getContext().get("version"));
+                        metadata.put("identifier", node.getIdentifier().replace(".img", ""));
+                        Response response = ResponseHandler.OK();
+                        response.put("teacher", metadata);
+                        return response;
+                    }
+                }, getContext().dispatcher());
+    }
+
+    private Future<Response> createTeacher(Request request) throws Exception {
+        return DataNode.create(request, getContext().dispatcher())
+                .map(new Mapper<Node, Response>() {
+                    @Override
+                    public Response apply(Node node) {
+                        Response response = ResponseHandler.OK();
+                        response.put("node_id", node.getIdentifier());
+                        response.put("identifier", node.getIdentifier());
+                        response.put("versionKey", node.getMetadata().get("versionKey"));
+                        return response;
+                    }
+                }, getContext().dispatcher());
+    }
+
+    /**
+     * Devcon 2020 end
+     */
 }
