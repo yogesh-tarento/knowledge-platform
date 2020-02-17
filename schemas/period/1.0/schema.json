@@ -7,14 +7,14 @@
         "identifier": {
             "type": "string"
         },
-        "session": {
+        "sessionId": {
             "type": "string",
             "minLength": 8
         },
         "subject": {
             "type": "string"
         },
-        "textbookId": {
+        "textBookId": {
             "type": "string"
         },
         "status": {

@@ -25,7 +25,10 @@ POST    /teacher/v3/create                    controllers.v3.TeacherController.c
 GET     /teacher/v3/read/:identifier          controllers.v3.TeacherController.read(identifier: String)
 POST    /period/v3/create                     controllers.v3.PeriodController.create
 GET     /period/v3/read/:identifier           controllers.v3.PeriodController.read(identifier: String)
-
+POST    /teacher/v3/user/profile              controllers.v3.TeacherController.addUserProfile
+POST    /period/v3/user/attend                controllers.v3.PeriodController.addUserAttended
+GET     /period/v3/attendance/:identifier     controllers.v3.PeriodController.getAttendance(identifier: String)
+GET     /teacher/v3/user/profile/:identifier  controllers.v3.TeacherController.getUserProfile(identifier: String)
 
 
 
