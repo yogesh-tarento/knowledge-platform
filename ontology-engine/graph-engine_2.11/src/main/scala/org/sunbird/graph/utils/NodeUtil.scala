@@ -115,7 +115,7 @@ object NodeUtil {
         val relMap = new util.HashMap[String, util.List[util.Map[String, AnyRef]]]
         for (rel <- inRelations.asScala) {
             val relKey:String = rel.getRelationType + "_in_" + rel.getEndNodeObjectType
-            if (relMap.containsKey(relationMap.get(relKey))) relMap.get(relationMap.get(relKey)).add(populateRelationMaps(rel, "in"))
+            if (relMap.containsKey(relationMap.get(relKey))) relMap.get(relationMap.get(relKey)).add(if(!isTeacher)populateRelationMaps(rel, "in") else populateRelationPeriodMaps(rel, "in"))
             else {
                 if(null != relationMap.get(relKey)) {
                     relMap.put(relationMap.get(relKey).asInstanceOf[String], new util.ArrayList[util.Map[String, AnyRef]]() {add(if(!isTeacher)populateRelationMaps(rel, "in") else populateRelationPeriodMaps(rel, "in"))})
@@ -124,7 +124,7 @@ object NodeUtil {
         }
         for (rel <- outRelations.asScala) {
             val relKey:String = rel.getRelationType + "_out_" + rel.getEndNodeObjectType
-            if (relMap.containsKey(relationMap.get(relKey))) relMap.get(relationMap.get(relKey)).add(populateRelationMaps(rel, "out"))
+            if (relMap.containsKey(relationMap.get(relKey))) relMap.get(relationMap.get(relKey)).add(if(!isTeacher)populateRelationMaps(rel, "out") else populateRelationPeriodMaps(rel, "out"))
             else {
                 if(null != relationMap.get(relKey)) {
                     relMap.put(relationMap.get(relKey).asInstanceOf[String], new util.ArrayList[util.Map[String, AnyRef]]() {add(if(!isTeacher)populateRelationMaps(rel, "out") else populateRelationPeriodMaps(rel, "out"))})

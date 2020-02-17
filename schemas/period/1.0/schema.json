@@ -16,6 +16,10 @@
         },
         "textbookId": {
             "type": "string"
+        },
+        "status": {
+            "type": "string",
+            "default": "Live"
         }
     }
 }
