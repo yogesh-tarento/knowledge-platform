@@ -54,7 +54,7 @@ class TeacherController @Inject()(@Named(ActorNames.SCHOOL_ACTOR) schoolActor: A
         val body = requestBody()
         val content = body.getOrElse("teacher", new java.util.HashMap()).asInstanceOf[java.util.Map[String, Object]]
         content.putAll(headers)
-        content.putAll(Map("sessionId" -> identifier))
+        content.putAll(Map("userId" -> identifier))
         val contentRequest = getRequest(content, headers, "getUserData")
         setRequestContext(contentRequest, version, objectType, schemaName)
         getResult("api.teacher.profile", schoolActor, contentRequest)

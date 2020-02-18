@@ -65,7 +65,7 @@ public class SchoolActor extends BaseActor {
         String objectType = (String) request.getContext().get("objectType");
         String sessionid = "";
         if(StringUtils.equalsIgnoreCase("Teacher", objectType)) {
-            sessionid = "teacher_" + request.get("sessionId");
+            sessionid = "teacher_" + request.get("userId");
         } else {
             sessionid = "attendance_" + request.get("sessionId");
         }
@@ -84,7 +84,7 @@ public class SchoolActor extends BaseActor {
         String objectType = (String) request.getContext().get("objectType");
         String sessionid = "";
         if(StringUtils.equalsIgnoreCase("Teacher", objectType)) {
-            sessionid = "teacher_" + request.get("sessionId");
+            sessionid = "teacher_" + request.get("userId");
         } else {
             sessionid = "attendance_" + request.get("sessionId");
         }
