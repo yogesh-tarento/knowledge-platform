@@ -20,7 +20,7 @@ POST       /content/v3/session/add         controllers.v3.SessionController.add
 DELETE      /content/v3/session/remove      controllers.v3.SessionController.remove
 PATCH       /content/v3/session/update/:identifier      controllers.v3.SessionController.update(identifier: String)
 
-#Devcon-School
+#Devcon-School - Start
 POST    /teacher/v3/create                    controllers.v3.TeacherController.create
 GET     /teacher/v3/read/:identifier          controllers.v3.TeacherController.read(identifier: String)
 POST    /period/v3/create                     controllers.v3.PeriodController.create
@@ -29,6 +29,6 @@ POST    /teacher/v3/user/profile              controllers.v3.TeacherController.a
 POST    /period/v3/user/attend                controllers.v3.PeriodController.addUserAttended
 GET     /period/v3/attendance/:identifier     controllers.v3.PeriodController.getAttendance(identifier: String)
 GET     /teacher/v3/user/profile/:identifier  controllers.v3.TeacherController.getUserProfile(identifier: String)
-
-
+GET     /teacher/v3/notify/batch              controllers.v3.TeacherController.notifyBatch
+#Devcon-School - End
 
