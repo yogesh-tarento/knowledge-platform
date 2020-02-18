@@ -23,7 +23,7 @@ class PeriodController @Inject()(@Named(ActorNames.SCHOOL_ACTOR) schoolActor: Ac
         val body = requestBody()
         val content = body.getOrElse("period", new java.util.HashMap()).asInstanceOf[java.util.Map[String, Object]]
         content.putAll(headers)
-        val contentRequest = getRequest(content, headers, "createTeacher")
+        val contentRequest = getRequest(content, headers, "create")
         setRequestContext(contentRequest, version, objectType, schemaName)
         getResult("api.period.create", schoolActor, contentRequest)
     }
@@ -34,7 +34,7 @@ class PeriodController @Inject()(@Named(ActorNames.SCHOOL_ACTOR) schoolActor: Ac
         val content = new java.util.HashMap().asInstanceOf[java.util.Map[String, Object]]
         content.putAll(headers)
         content.putAll(Map("identifier" -> identifier, "mode" -> "read", "fields" -> new util.ArrayList[String]()))
-        val readRequest = getRequest(content, headers, "readTeacher")
+        val readRequest = getRequest(content, headers, "read")
         setRequestContext(readRequest, version, objectType, schemaName)
         getResult("api.period.read", schoolActor, readRequest)
     }
