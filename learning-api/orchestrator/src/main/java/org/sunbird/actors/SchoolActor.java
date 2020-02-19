@@ -71,11 +71,11 @@ public class SchoolActor extends BaseActor {
         }
         String existingData = RedisCache.get(sessionid, null, 0);
         if(StringUtils.isBlank(existingData)){
-            RedisCache.set(sessionid, JsonUtils.serialize(request.get("userDetails")), 1200);
+            RedisCache.set(sessionid, JsonUtils.serialize(request.get("userDetails")), 0);
         } else {
             Map<String, Object> dataMap = JsonUtils.deserialize(existingData, Map.class);
             dataMap.putAll((Map<String, Object>) request.get("userDetails"));
-            RedisCache.set(sessionid, JsonUtils.serialize(dataMap), 1200);
+            RedisCache.set(sessionid, JsonUtils.serialize(dataMap), 0);
         }
         return Promise$.MODULE$.successful(ResponseHandler.OK()).future();
     }

@@ -61,8 +61,9 @@ class TeacherController @Inject()(@Named(ActorNames.SCHOOL_ACTOR) schoolActor: A
         getResult("api.teacher.profile", schoolActor, contentRequest)
     }
 
-    def notifyBatch()  = Action {
-        val cmd = Seq("curl", "-X", "POST", s"https://onesignal.com/api/v1/notifications", "-H", "Content-Type: application/json", "-H", "authorization: Basic MDY4YjY1YTctNWRjMC00MjkxLWFiMTQtYzczMDg5MzI2Yzhm", "-d", "{\"app_id\":\"6e98f8cf-67fe-4798-93b9-97955e4858fc\",\"filters\":[{\"field\":\"tag\",\"key\":\"teachers\",\"relation\":\"=\",\"value\":\"true\"}],\"headings\":{\"en\":\"My Teacher Image notification title\"},\"contents\":{\"en\":\"My Teacher notification content\"},\"data\":{\"task\":\"Sent through api Teacher\"},\"big_picture\":\"https://img.onesignal.com/n/37326fcc-2baa-45da-891c-ca9454a64957.png\",\"large_icon\":\"https://img.onesignal.com/n/b5cadcf0-1297-4489-b865-545b421d8c5d.png\"}")
+    def notifyBatch()  = Action { implicit request =>
+        val body = requestBody()
+        val cmd = Seq("curl", "-X", "POST", s"https://onesignal.com/api/v1/notifications", "-H", "Content-Type: application/json", "-H", "authorization: Basic MDY4YjY1YTctNWRjMC00MjkxLWFiMTQtYzczMDg5MzI2Yzhm", "-d", "{\"app_id\":\"6e98f8cf-67fe-4798-93b9-97955e4858fc\",\"filters\":[{\"field\":\"tag\",\"key\":\"" + body.keySet().head +"\",\"relation\":\"=\",\"value\":\""+ body.get(body.keySet().head) +"\"}],\"headings\":{\"en\":\"Class Assessment\"},\"contents\":{\"en\":\"Learn Something New\"},\"data\":{\""+ body.keySet().head +"\":\""+ body.get(body.keySet().head) +"\"},\"large_icon\":\"https://i.ibb.co/x14wLrp/tha.png\"}")
         val result = cmd.!!
         Ok(result).as("application/json")
     }

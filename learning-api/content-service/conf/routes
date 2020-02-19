@@ -29,6 +29,6 @@ POST    /teacher/v3/user/profile              controllers.v3.TeacherController.a
 POST    /period/v3/user/attend                controllers.v3.PeriodController.addUserAttended
 GET     /period/v3/attendance/:identifier     controllers.v3.PeriodController.getAttendance(identifier: String)
 GET     /teacher/v3/user/profile/:identifier  controllers.v3.TeacherController.getUserProfile(identifier: String)
-GET     /teacher/v3/notify/batch              controllers.v3.TeacherController.notifyBatch
+POST     /teacher/v3/notify/batch              controllers.v3.TeacherController.notifyBatch
 #Devcon-School - End
 
