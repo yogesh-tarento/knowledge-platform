@@ -36,6 +36,8 @@ object NodeUtil {
             finalMetadata.keySet.retainAll(fields)
         finalMetadata.put("identifier", node.getIdentifier)
         finalMetadata.put("languageCode", getLanguageCodes(node))
+        if(null != updatedMetadataMap.get("markerList"))
+            finalMetadata.put("markerList", updatedMetadataMap.get("markerList"))
         finalMetadata
     }
 
