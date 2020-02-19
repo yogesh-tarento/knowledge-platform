@@ -67,4 +67,16 @@ class TeacherController @Inject()(@Named(ActorNames.SCHOOL_ACTOR) schoolActor: A
         val result = cmd.!!
         Ok(result).as("application/json")
     }
+
+    def getAssessmentScore(sessionId: String) = Action { implicit request =>
+        val cmd = Seq("curl", "-X", "POST", s"http://50.1.0.12:8082/druid/v2", "-H", "Content-Type: application/json", "-H", "Content-Type: application/json", "-d", "{\n  \"queryType\": \"groupBy\",\n  \"dataSource\": \"devcon-events\",\n  \"dimensions\": [\n    \"profileId\",\n    \"profileName\"\n  ],\n  \"aggregations\": [\n    {\n      \"fieldName\": \"edata_duration\",\n      \"fieldNames\": [\n        \"edata_duration\"\n      ],\n      \"type\": \"doubleSum\",\n      \"name\": \"SUM(edata_duration)\"\n    },\n    {\n      \"fieldName\": \"edata_score\",\n      \"fieldNames\": [\n        \"edata_score\"\n      ],\n      \"type\": \"doubleSum\",\n      \"name\": \"SUM(edata_score)\"\n    }\n  ],\n  \"granularity\": \"all\",\n  \"postAggregations\": [],\n  \"intervals\": \"2020-02-15T00:00:00+00:00/2020-02-23T00:00:00+00:00\",\n  \"filter\": {\n    \"type\": \"and\",\n    \"fields\": [\n      {\n        \"type\": \"selector\",\n        \"dimension\": \"sid\",\n        \"value\": \"" + sessionId + "\"\n      },\n      {\n        \"type\": \"selector\",\n        \"dimension\": \"eid\",\n        \"value\": \"DC_ASSESS\"\n      }\n    ]\n  },\n  \"limitSpec\": {\n    \"type\": \"default\",\n    \"limit\": 10000,\n    \"columns\": [\n      {\n        \"dimension\": \"SUM(edata_duration)\",\n        \"direction\": \"descending\"\n      }\n    ]\n  }\n}")
+        val result = cmd.!!
+        Ok(result).as("application/json")
+    }
+
+    def getAttendance(sessionId: String) = Action { implicit request =>
+        val cmd = Seq("curl", "-X", "POST", s"http://50.1.0.12:8082/druid/v2", "-H", "Content-Type: application/json", "-H", "Content-Type: application/json", "-d", "{\"queryType\":\"groupBy\",\"dataSource\":\"devcon-events\",\"dimensions\":[\"profileId\",\"profileName\"],\"aggregations\":[],\"granularity\":\"all\",\"postAggregations\":[],\"intervals\":\"2020-02-15T00:00:00+00:00/2020-02-23T00:00:00+00:00\",\"filter\":{\"type\":\"and\",\"fields\":[{\"type\":\"selector\",\"dimension\":\"sid\",\"value\":\"" + sessionId + "\"},{\"type\":\"selector\",\"dimension\":\"eid\",\"value\":\"DC_ATTEND\"}]},\"limitSpec\":{\"type\":\"default\",\"limit\":10000,\"columns\":[{\"dimension\":\"profileId\",\"direction\":\"descending\"}]}}")
+        val result = cmd.!!
+        Ok(result).as("application/json")
+    }
 }
