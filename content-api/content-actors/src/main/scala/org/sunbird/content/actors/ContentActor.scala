@@ -10,11 +10,11 @@ import org.apache.commons.lang3.StringUtils
 import org.sunbird.actor.core.BaseActor
 import org.sunbird.cache.impl.RedisCache
 import org.sunbird.cloud.storage.util.JSONUtils
-import org.sunbird.content.util.CopyManager
+import org.sunbird.content.util.{CopyManager, DiscardManager, FlagManager, RetireManager}
 import org.sunbird.cloudstore.StorageService
 import org.sunbird.common.{ContentParams, DateUtils, Platform, Slug}
 import org.sunbird.common.dto.{Request, Response, ResponseHandler}
-import org.sunbird.common.exception.ClientException
+import org.sunbird.common.exception.{ClientException, ResourceNotFoundException}
 import org.sunbird.util.RequestUtil
 import org.sunbird.content.upload.mgr.UploadManager
 import org.sunbird.graph.OntologyEngineContext
@@ -39,6 +39,8 @@ class ContentActor @Inject() (implicit oec: OntologyEngineContext, ss: StorageSe
 			case "retireContent" => retire(request)
 			case "copy" => copy(request)
 			case "uploadPreSignedUrl" => uploadPreSignedUrl(request)
+			case "discardContent" => discard(request)
+			case "flagContent" => flag(request)
 			case _ => ERROR(request.getOperation)
 		}
 	}
@@ -105,7 +107,7 @@ class ContentActor @Inject() (implicit oec: OntologyEngineContext, ss: StorageSe
 		DataNode.read(request).map(node => {
 			val response = ResponseHandler.OK()
 			val objectKey = if (StringUtils.isEmpty(filePath)) "content" + File.separator + `type` + File.separator + identifier + File.separator + Slug.makeSlug(fileName, true)
-				else "content"+ File.separator + filePath + File.separator + `type` + File.separator + identifier + File.separator + Slug.makeSlug(fileName, true)
+				else filePath + File.separator + "content" + File.separator + `type` + File.separator + identifier + File.separator + Slug.makeSlug(fileName, true)
 			val expiry = Platform.config.getString("cloud_storage.upload.url.ttl")
 			val preSignedURL = ss.getSignedURL(objectKey, Option.apply(expiry.toInt), Option.apply("w"))
 			response.put("identifier", identifier)
@@ -114,53 +116,17 @@ class ContentActor @Inject() (implicit oec: OntologyEngineContext, ss: StorageSe
 			response
 		}) recoverWith { case e: CompletionException => throw e.getCause }
 	}
+
 	def retire(request: Request): Future[Response] = {
-		validateRetireRequest(request)
-		if (StringUtils.equalsIgnoreCase(ContentParams.retired.name, ContentParams.status.name))
-			throw new ClientException("ERR_CONTENT_RETIRE","Content with Identifier is already Retired.")
-		DataNode.read(request).map(node => {
-			val response = ResponseHandler.OK
-			if (node.getMetadata.get("status") != "Live" || node.getMetadata.get("status") != "Unlisted")
-				request.put("status", "Retired")
-			request.put(HierarchyConstants.LAST_UPDATED_ON, DateUtils.formatCurrentDate)
-			request.put(HierarchyConstants.LAST_STATUS_CHANGED_ON, DateUtils.formatCurrentDate)
-			DataNode.update(request).map(node => {
-				response.put("identifier", node.getIdentifier)
-				if (node.getMetadata.get("status") == "Live" || node.getMetadata.get("status") == "Unlisted")
-					request.put(HierarchyConstants.STATUS, "Draft")
-				response.put("identifier", node.getIdentifier)
-			})
-			val contentId: String = request.get("identifier").asInstanceOf[String]
-			val req = new Request(request)
-			req.getContext.put("schemaName", "collection")
-			req.put("identifier", contentId)
-			if (StringUtils.equalsIgnoreCase("application/vnd.ekstep.content-collection", node.getMetadata.get("mimeType").asInstanceOf[String])) {
-				val responseFuture = ExternalPropsManager.fetchProps(req, List(HierarchyConstants.HIERARCHY))
-				responseFuture.map((response: Response) => {
-					val hierarchyString = JSONUtils.deserialize(response.get("hierarchy").asInstanceOf[String])
-					hierarchyString.asInstanceOf[String]
-					ExternalPropsManager.saveProps(req).map(resp => {
-						val response = ResponseHandler.OK()
-						response.put("identifier", node.getIdentifier)
-						response
-					})
-				})
-				request.put("status", "Retired")
-				DataNode.update(request).map(resp => {
-					val response = ResponseHandler.OK
-					response.put("identifier", node.getIdentifier)
-					RedisCache.delete(contentId)
-					response
-				})
-			}else
-				throw new ClientException("ERR_CONTENT_NOT_FOUND", "Cannot update the status retire")
-		}).flatMap(f => f)
+		RetireManager.retire(request)
 	}
-	def validateRetireRequest(request: Request)={
-		val contentId:String = request.get("identifier").asInstanceOf[String]
-		if(StringUtils.isBlank(contentId)|| StringUtils.endsWithIgnoreCase(contentId,HierarchyConstants.IMAGE_SUFFIX)) {
-			throw new ClientException("ERR_INVALID_CONTENT_ID", "Please Provide Valid Content Identifier.")
-		}
+	def discard(request: Request): Future[Response] = {
+		RequestUtil.restrictProperties(request)
+		DiscardManager.discard(request)
+	}
+
+	def flag(request: Request): Future[Response] = {
+		FlagManager.flag(request)
 	}
 
 	def populateDefaultersForCreation(request: Request) = {
