@@ -41,6 +41,12 @@ public class TelemetryManager {
 		String event = TelemetryGenerator.access(context, params);
 		telemetryHandler.send(event, Level.INFO, true);
 	}
+	
+	public static void logRequestBody(String message) {
+		Map<String, String> context = getContext();
+		String event = TelemetryGenerator.log(context, "system", Level.INFO.name(), message, null, null);
+		telemetryHandler.send(event, Level.INFO, true);
+	}
 
 	/**
 	 * To log only message as a telemetry event.
