@@ -3,13 +3,16 @@ package controllers.v4
 import akka.actor.{ActorRef, ActorSystem}
 import controllers.BaseController
 import org.sunbird.utils.AssessmentConstants
-
-import javax.inject.{Inject, Named}
 import play.api.mvc.ControllerComponents
 import utils.{ActorNames, ApiId, QuestionOperations}
 
+import java.io.File
+import java.nio.file.Paths
+import java.util
+import javax.inject.{Inject, Named}
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
+import scala.io.Source._
 
 class QuestionController @Inject()(@Named(ActorNames.QUESTION_ACTOR) questionActor: ActorRef, cc: ControllerComponents, actorSystem: ActorSystem)(implicit exec: ExecutionContext) extends BaseController(cc) {
 
@@ -143,4 +146,93 @@ class QuestionController @Inject()(@Named(ActorNames.QUESTION_ACTOR) questionAct
 		setRequestContext(questionRequest, version, objectType, schemaName)
 		getResult(ApiId.COPY_QUESTION, questionActor, questionRequest)
 	}
+
+	def bulkUpload() = Action.async { implicit request =>
+		val headers = commonHeaders()
+		val body = requestBody()
+
+
+		val source = scala.io.Source.fromFile("/home/yogeshkumar/UPSMF/sample_questions.csv")
+		val data = source.getLines.map(_.split("\t")).toArray
+		println(data)
+		source.close
+
+		val question = body.getOrDefault("question", new java.util.HashMap()).asInstanceOf[java.util.Map[String, AnyRef]]
+		question.putAll(headers)
+		val questionRequest = getRequest(question, headers, QuestionOperations.createQuestion.toString)
+		setRequestContext(questionRequest, version, objectType, schemaName)
+		getResult(ApiId.CREATE_QUESTION, questionActor, questionRequest)
+	}
+
+	def parseCSV(file: File) = {
+		val defaultQuestion = new java.util.HashMap().asInstanceOf[java.util.Map[String, AnyRef]]
+
+		defaultQuestion.put("code", "question")
+		defaultQuestion.put("mimeType", "application/vnd.sunbird.question")
+		defaultQuestion.put("objectType", "Question")
+		defaultQuestion.put("primaryCategory", "MTF Question")
+		defaultQuestion.put("qType", "MTF")
+		defaultQuestion.put("name", "Question")
+
+		val lines = fromFile(file).getLines
+		lines.map { s =>
+			var question = new java.util.HashMap().asInstanceOf[java.util.Map[String, AnyRef]]
+			question.putAll(defaultQuestion)
+			val cols = s.split(",").map(_.trim)
+
+			val questionText = cols(0)
+			val option1 = cols(1)
+			val option2 = cols(2)
+			val option3 = cols(3)
+			val option4 = cols(4)
+			val answer = cols(5)
+			val function = cols(6)
+			val role = cols(7)
+			val activity = cols(8)
+			val competency = cols(9)
+			val level = cols(10)
+			val assessmentType = cols(11)
+
+			question.put("body", questionText)
+			question.put("editorState", Map (
+				"options" -> Array(
+					Map("answer" -> option1),
+					Map("answer" -> option2),
+					Map("answer" -> option3),
+					Map("answer" -> option4)
+				)
+			)	)
+
+			question
+		}
+		lines.toList
+	}
+	def upload = Action(parse.multipartFormData) { request =>
+		request.body
+			.file("file")
+			.map { filePart =>
+				// only get the last part of the filename
+				// otherwise someone can send a path like ../../home/foo/bar.txt to write to other files on the system
+				val filename = Paths.get(filePart.filename).getFileName
+				val fileSize = filePart.fileSize
+				val contentType = filePart.contentType
+				val absolutePath = filePart.ref.path.toAbsolutePath
+				val realPath = filePart.ref.path.toRealPath()
+
+				println("FileName :" + filename)
+				println("FileSize :" + fileSize)
+				println("ContentType :" + contentType)
+				println("AbsolutePath :" + absolutePath)
+
+				println("AbsolutePath Content\n" + parseCSV(absolutePath.toFile).toString())
+
+//				filePart.ref.copyTo(Paths.get(s"/tmp/picture/$filename"), replace = true)
+				Ok("File uploaded")
+			}
+			.get
+
+
+	}
+
+
 }
