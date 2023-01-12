@@ -2,13 +2,13 @@ package controllers.v4
 
 import akka.actor.{ActorRef, ActorSystem}
 import controllers.BaseController
+import org.apache.commons.lang3.StringUtils
 import org.sunbird.utils.AssessmentConstants
 import play.api.mvc.ControllerComponents
 import utils.{ActorNames, ApiId, QuestionOperations}
 
 import java.io.File
 import java.nio.file.Paths
-import java.util
 import javax.inject.{Inject, Named}
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext
@@ -181,10 +181,10 @@ class QuestionController @Inject()(@Named(ActorNames.QUESTION_ACTOR) questionAct
 			val cols = s.split(",").map(_.trim)
 
 			val questionText = cols(0)
-			val option1 = cols(1)
-			val option2 = cols(2)
-			val option3 = cols(3)
-			val option4 = cols(4)
+			val option0 = cols(1)
+			val option1 = cols(2)
+			val option2 = cols(3)
+			val option3 = cols(4)
 			val answer = cols(5)
 			val function = cols(6)
 			val role = cols(7)
@@ -196,19 +196,42 @@ class QuestionController @Inject()(@Named(ActorNames.QUESTION_ACTOR) questionAct
 			question.put("body", questionText)
 			question.put("editorState", Map (
 				"options" -> Array(
-					Map("answer" -> option1),
-					Map("answer" -> option2),
-					Map("answer" -> option3),
-					Map("answer" -> option4)
+					Map(
+						"answer" -> StringUtils.equalsIgnoreCase(option0, answer),
+						"value" -> Map(
+							"body" -> option0,
+							"value" -> 0
+						)
+					),
+					Map(
+						"answer" -> StringUtils.equalsIgnoreCase(option1, answer),
+						"value" -> Map(
+							"body" -> option1,
+							"value" -> 1
+						)
+					),
+					Map(
+						"answer" -> StringUtils.equalsIgnoreCase(option2, answer),
+						"value" -> Map(
+							"body" -> option2,
+							"value" -> 2
+						)
+					),
+					Map(
+						"answer" -> StringUtils.equalsIgnoreCase(option3, answer),
+						"value" -> Map(
+							"body" -> option3,
+							"value" -> 3
+						)
+					)
 				)
 			)	)
 
 			question
-		}
-		lines.toList
+		}.toList
 	}
-	def upload = Action(parse.multipartFormData) { request =>
-		request.body
+	def upload() = Action(parse.multipartFormData) { request =>
+		val questions = request.body
 			.file("file")
 			.map { filePart =>
 				// only get the last part of the filename
@@ -224,14 +247,16 @@ class QuestionController @Inject()(@Named(ActorNames.QUESTION_ACTOR) questionAct
 				println("ContentType :" + contentType)
 				println("AbsolutePath :" + absolutePath)
 
-				println("AbsolutePath Content\n" + parseCSV(absolutePath.toFile).toString())
+				parseCSV(absolutePath.toFile).map( question => {
 
-//				filePart.ref.copyTo(Paths.get(s"/tmp/picture/$filename"), replace = true)
-				Ok("File uploaded")
+						val headers = commonHeaders(request.headers)
+						question.putAll(headers)
+						val questionRequest = getRequest(question, headers, QuestionOperations.createQuestion.toString)
+						setRequestContext(questionRequest, version, objectType, schemaName)
+						getResult(ApiId.CREATE_QUESTION, questionActor, questionRequest)
+					}
+				)  // List[Future[Result]]
 			}
-			.get
-
-
 	}
 
 
