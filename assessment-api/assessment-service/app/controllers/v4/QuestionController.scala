@@ -4,14 +4,16 @@ import akka.actor.{ActorRef, ActorSystem}
 import controllers.BaseController
 import org.apache.commons.lang3.StringUtils
 import org.sunbird.utils.AssessmentConstants
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{ControllerComponents, Result}
 import utils.{ActorNames, ApiId, QuestionOperations}
 
 import java.io.File
 import java.nio.file.Paths
+import java.util
 import javax.inject.{Inject, Named}
 import scala.collection.JavaConverters._
-import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.io.Source._
 
 class QuestionController @Inject()(@Named(ActorNames.QUESTION_ACTOR) questionActor: ActorRef, cc: ControllerComponents, actorSystem: ActorSystem)(implicit exec: ExecutionContext) extends BaseController(cc) {
@@ -164,6 +166,17 @@ class QuestionController @Inject()(@Named(ActorNames.QUESTION_ACTOR) questionAct
 		getResult(ApiId.CREATE_QUESTION, questionActor, questionRequest)
 	}
 
+	def buildOptionMap(option : String, level : Integer, answer: String) = {
+		val mapOptionValue = new java.util.HashMap().asInstanceOf[java.util.Map[String, AnyRef]]
+		mapOptionValue.put("body", option)
+		mapOptionValue.put("value", level)
+		val mapOption = new java.util.HashMap().asInstanceOf[java.util.Map[String, AnyRef]]
+		mapOption.put("answer", Boolean.box(StringUtils.equalsIgnoreCase(option, answer)))
+		mapOption.put("value", mapOptionValue)
+
+		mapOption
+	}
+
 	def parseCSV(file: File) = {
 		val defaultQuestion = new java.util.HashMap().asInstanceOf[java.util.Map[String, AnyRef]]
 
@@ -176,8 +189,7 @@ class QuestionController @Inject()(@Named(ActorNames.QUESTION_ACTOR) questionAct
 
 		val lines = fromFile(file).getLines
 		lines.map { s =>
-			var question = new java.util.HashMap().asInstanceOf[java.util.Map[String, AnyRef]]
-			question.putAll(defaultQuestion)
+
 			val cols = s.split(",").map(_.trim)
 
 			val questionText = cols(0)
@@ -193,44 +205,26 @@ class QuestionController @Inject()(@Named(ActorNames.QUESTION_ACTOR) questionAct
 			val level = cols(10)
 			val assessmentType = cols(11)
 
-			question.put("body", questionText)
-			question.put("editorState", Map (
-				"options" -> Array(
-					Map(
-						"answer" -> StringUtils.equalsIgnoreCase(option0, answer),
-						"value" -> Map(
-							"body" -> option0,
-							"value" -> 0
-						)
-					),
-					Map(
-						"answer" -> StringUtils.equalsIgnoreCase(option1, answer),
-						"value" -> Map(
-							"body" -> option1,
-							"value" -> 1
-						)
-					),
-					Map(
-						"answer" -> StringUtils.equalsIgnoreCase(option2, answer),
-						"value" -> Map(
-							"body" -> option2,
-							"value" -> 2
-						)
-					),
-					Map(
-						"answer" -> StringUtils.equalsIgnoreCase(option3, answer),
-						"value" -> Map(
-							"body" -> option3,
-							"value" -> 3
-						)
-					)
-				)
-			)	)
 
+			val options = new util.ArrayList[util.Map[String, AnyRef]]()
+
+			options.add(buildOptionMap(option0, 0, answer))
+			options.add(buildOptionMap(option1, 1, answer))
+			options.add(buildOptionMap(option2, 2, answer))
+			options.add(buildOptionMap(option3, 3, answer))
+
+			val editorState = new java.util.HashMap().asInstanceOf[java.util.Map[String, AnyRef]]
+			editorState.put("options", options)
+			editorState.put("question", questionText)
+
+			val question = new java.util.HashMap().asInstanceOf[java.util.Map[String, AnyRef]]
+			question.putAll(defaultQuestion)
+			question.put("body", questionText)
+			question.put("editorState", editorState)
 			question
 		}.toList
 	}
-	def upload() = Action(parse.multipartFormData) { request =>
+	def upload() = Action(parse.multipartFormData) { implicit request =>
 		val questions = request.body
 			.file("file")
 			.map { filePart =>
@@ -247,17 +241,28 @@ class QuestionController @Inject()(@Named(ActorNames.QUESTION_ACTOR) questionAct
 				println("ContentType :" + contentType)
 				println("AbsolutePath :" + absolutePath)
 
-				parseCSV(absolutePath.toFile).map( question => {
-
-						val headers = commonHeaders(request.headers)
-						question.putAll(headers)
-						val questionRequest = getRequest(question, headers, QuestionOperations.createQuestion.toString)
-						setRequestContext(questionRequest, version, objectType, schemaName)
-						getResult(ApiId.CREATE_QUESTION, questionActor, questionRequest)
-					}
-				)  // List[Future[Result]]
+				parseCSV(absolutePath.toFile)
 			}
+
+		var result = Ok("Success")
+		val futures = questions.get.map(question => {
+				val headers = commonHeaders(request.headers)
+				question.putAll(headers)
+				val questionRequest = getRequest(question, headers, QuestionOperations.createQuestion.toString)
+				setRequestContext(questionRequest, version, objectType, schemaName)
+				getResult(ApiId.CREATE_QUESTION, questionActor, questionRequest)
+			}
+		)
+
+		getBulkResult(ApiId.CREATE_QUESTION, futures)
+
+//		Ok("Success")
 	}
 
+	def getBulkResult(apiId: String, futures: List[Future[Result]]) = {
+
+		val f = futures.apply(1)
+		Await.result(f, Duration.apply("30s"))
+	}
 
 }
