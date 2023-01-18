@@ -55,6 +55,10 @@ abstract class BaseController(protected val cc: ControllerComponents)(implicit e
         new org.sunbird.common.dto.Request(context, input, operation, null);
     }
 
+    def getResponse(apiId: String, actor: ActorRef, request: org.sunbird.common.dto.Request): Future[AnyRef] = {
+        Patterns.ask(actor, request, 30000) recoverWith { case e: Exception => Future(ResponseHandler.getErrorResponse(e)) }
+    }
+
     def getResult(apiId: String, actor: ActorRef, request: org.sunbird.common.dto.Request) : Future[Result] = {
         val future = Patterns.ask(actor, request, 30000) recoverWith {case e: Exception => Future(ResponseHandler.getErrorResponse(e))}
         future.map(f => {
