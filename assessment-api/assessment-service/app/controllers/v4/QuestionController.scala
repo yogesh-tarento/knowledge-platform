@@ -1,27 +1,19 @@
 package controllers.v4
 
 import akka.actor.{ActorRef, ActorSystem}
-import akka.pattern.Patterns
 import controllers.BaseController
 import handlers.QuestionExcelParser
-import org.apache.commons.lang3.StringUtils
-import org.apache.poi.ss.usermodel.CellStyle
-import org.apache.poi.xssf.streaming.SXSSFSheet
-import org.apache.poi.xssf.usermodel.{XSSFRow, XSSFSheet, XSSFWorkbook}
-import org.sunbird.common.dto.ResponseHandler
-import org.sunbird.common.exception.ResponseCode
+import org.sunbird.common.dto.Response
 import org.sunbird.utils.AssessmentConstants
-import play.api.mvc.{ControllerComponents, Result}
+import play.api.libs.json.Format.GenericFormat
+import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import utils.{ActorNames, ApiId, JavaJsonUtils, QuestionOperations}
 
-import java.io.{File, FileInputStream}
-import java.util
 import javax.inject.{Inject, Named}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.io.Source._
-import org.sunbird.common.dto.{Response, ResponseHandler}
 
 class QuestionController @Inject()(@Named(ActorNames.QUESTION_ACTOR) questionActor: ActorRef, cc: ControllerComponents, actorSystem: ActorSystem)(implicit exec: ExecutionContext) extends BaseController(cc) {
 
@@ -173,13 +165,12 @@ class QuestionController @Inject()(@Named(ActorNames.QUESTION_ACTOR) questionAct
 			}
 		)
 
-		val f = Future.sequence(futures).map(results => results.map(_.asInstanceOf[Response]).groupBy(_.getResponseCode).mapValues(listResult => {
+		val f = Future.sequence(futures).map(results => results.map(_.asInstanceOf[Response]).groupBy(_.getResponseCode.toString).mapValues(listResult => {
 			listResult.map(result => {
 				setResponseEnvelope(result)
-				JavaJsonUtils.serialize(result)
+				JavaJsonUtils.serialize(result.getResult)
 			})
-		})).map(f => Ok(JavaJsonUtils.serialize(f.toString())).as("application/json"))
-
+		})).map(f => Ok(Json.stringify(Json.toJson(f))).as("application/json"))
 
 		Await.result(f, Duration.apply("30s"))
 	}

@@ -11,22 +11,26 @@ object QuestionExcelParser {
 
   def getQuestions(file: File) = {
 
-    val workbook = new XSSFWorkbook(new FileInputStream(file))
-    val sheet = workbook.getSheetAt(0)
+    try {
+      val workbook = new XSSFWorkbook(new FileInputStream(file))
+      val sheet = workbook.getSheetAt(0)
 
-    (1 until sheet.getPhysicalNumberOfRows)
-      .filter(rowNum => {
-        val oRow = Option(sheet.getRow(rowNum))
-        oRow match {
-          case Some(x) => {
-            val questionText = sheet.getRow(rowNum).getCell(4)
-            val questionType = sheet.getRow(rowNum).getCell(7)
-            boolean2Boolean("MCQ".equals(questionType.toString))
+      (1 until sheet.getPhysicalNumberOfRows)
+        .filter(rowNum => {
+          val oRow = Option(sheet.getRow(rowNum))
+          oRow match {
+            case Some(x) => {
+              val questionText = sheet.getRow(rowNum).getCell(4)
+              val questionType = sheet.getRow(rowNum).getCell(7)
+              boolean2Boolean("MCQ".equals(questionType.toString))
+            }
+            case None => false
           }
-          case None => false
-        }
-      })
-      .map(rowNum => parseQuestion(sheet.getRow(rowNum))).toList
+        })
+        .map(rowNum => parseQuestion(sheet.getRow(rowNum))).toList
+    } catch {
+      case e : Exception => throw new Exception("Invalid File")
+    }
   }
 
   def buildDefaultQuestion() = {
@@ -36,7 +40,7 @@ object QuestionExcelParser {
     defaultQuestion.put("mimeType", "application/vnd.sunbird.question")
     defaultQuestion.put("objectType", "Question")
     defaultQuestion.put("primaryCategory", "MTF Question")
-    defaultQuestion.put("qType", "MTF")
+    defaultQuestion.put("qType", "MCQ")
     defaultQuestion.put("name", "Question")
     defaultQuestion
   }
